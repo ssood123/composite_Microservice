@@ -15,17 +15,12 @@ app.use(
 )
 
 const getSpecificStudent = async (targetUni) => {
-	let result1 = await axios.get(`https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/students/${uni}`)
+	let result1 = await axios.get(`https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/students/${targetUni}`)
 	if (!result1) {
 		return null
 	}
 	let student1 = ''
-	for (const uni of result1.body) {
-		if (uni === targetUni) {
-			student1 = uni
-			break
-		}
-	}
+	student1 = result1.data.body.substring(2,8)
 	return student1
 }
 
@@ -52,14 +47,15 @@ const createNewLocation = async (timezone, countries, unis) => {
 }
 
 app.get('/getStudentAndProject/:uni', async (req, res) => {
-	let student = await getSpecificStudent()
+	let student = await getSpecificStudent(req.params.uni)
 	let listOfProjects = await axios.get('https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/projects')
-	for (project of listOfProjects) {
+	for (let project of listOfProjects.data['data']) {
 		let projectMembers =  await axios.get(`https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/projects/${project}/members`)
-		if (projectMembers.includes(student)) {
-			return project
+		if (projectMembers.data['data'].includes(student)) {
+			res.send(project)
 		}
 	}
+	res.json({'message': 'no student with matching project found'})
 })
 
 app.post('/newStudent', async (req, res) => {
@@ -74,7 +70,7 @@ app.post('/newStudent', async (req, res) => {
 	
 	let listOfProjects = await axios.get('https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/projects')	
 	let projectAlreadyInDatabase = 0
-	for (projectTemp of listOfProjects) {
+	for (let projectTemp of listOfProjects) {
 		if (projectTemp === project) {
 			projectAlreadyInDatabase = 1
 		}
@@ -87,7 +83,7 @@ app.post('/newStudent', async (req, res) => {
 
 	let listOfTimezones = await axios.get('https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/locations')	
 	let timezoneAlreadyInDatabase = 0
-	for (timezoneTemp of listOfTimezones) {
+	for (let timezoneTemp of listOfTimezones) {
 		if (timezoneTemp === timezone) {
 			timezoneAlreadyInDatabase = 1
 		}
@@ -105,19 +101,22 @@ app.get('/getProjectLocations/:project', async (req, res) => {
 	let project = req.params.project
 	let listOfUnis = await axios.get(`https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/projects/${project}/members`)
 	let listOfTimezones = await axios.get('https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/locations')
+	listOfUnis = listOfUnis.data['data']
+	listOfTimezones = listOfTimezones.data['data']
 	listOfUnis = listOfUnis.split(', ')
-	for (uni of listOfUnis) {
-		for (tz of listOfTimezones) {
-			let timezonePpl = await axios.get(`https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/location/${tz}/members`)
+	for (let uni of listOfUnis) {
+		for (let tz of listOfTimezones) {
+			let timezonePpl = await axios.get(`https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/locations/${tz}/students`)
+			timezonePpl = timezonePpl.data['data']
 			timezonePpl = timezonePpl.split(', ')
-			for (tzppl of timezonePpl) {
+			for (let tzppl of timezonePpl) {
 				if (tzppl === uni) {
 					listOfLocations.push(tz)
 				}
 			}
 		}
 	}
-	return listOfLocations
+	res.send(listOfLocations)
 })
 
 
