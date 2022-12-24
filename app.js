@@ -70,7 +70,7 @@ app.post('/newStudent', async (req, res) => {
 	
 	let listOfProjects = await axios.get('https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/projects')	
 	let projectAlreadyInDatabase = 0
-	for (let projectTemp of listOfProjects) {
+	for (let projectTemp of listOfProjects.data['data'].split(', ')) {
 		if (projectTemp === project) {
 			projectAlreadyInDatabase = 1
 		}
@@ -83,7 +83,7 @@ app.post('/newStudent', async (req, res) => {
 
 	let listOfTimezones = await axios.get('https://tt992e54o3.execute-api.us-east-1.amazonaws.com/dev/locations')	
 	let timezoneAlreadyInDatabase = 0
-	for (let timezoneTemp of listOfTimezones) {
+	for (let timezoneTemp of listOfTimezones.data['data'].split(', ')) {
 		if (timezoneTemp === timezone) {
 			timezoneAlreadyInDatabase = 1
 		}
